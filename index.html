@@ -16,6 +16,7 @@
             --border: #2e3f5b;
             --accent: #10b981;
             --gold: #f59e0b;
+            --bronze: #cd7f32;
         }
 
         * {
@@ -30,6 +31,18 @@
             color: var(--text-light);
             padding: 30px 20px;
             line-height: 1.5;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        #celeb-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
         }
 
         header {
@@ -278,6 +291,14 @@
             font-size: 1rem;
         }
 
+        .score-input.pk-input {
+            border-color: var(--gold);
+            color: var(--gold);
+            width: 34px;
+            height: 28px;
+            font-size: 0.85rem;
+        }
+
         .score-input:focus {
             outline: none;
             border-color: var(--primary);
@@ -286,7 +307,7 @@
 
         .bracket-container {
             display: flex;
-            gap: 25px;
+            gap: 35px;
             overflow-x: auto;
             padding: 20px 0;
             align-items: center;
@@ -296,8 +317,28 @@
             display: flex;
             flex-direction: column;
             justify-content: space-around;
-            min-width: 240px;
-            height: 1300px;
+            min-width: 280px;
+            height: 1400px;
+            gap: 10px;
+        }
+
+        .bracket-round-title {
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .bracket-matchups-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            flex-grow: 1;
         }
 
         .bracket-matchup {
@@ -307,6 +348,48 @@
             padding: 10px;
             width: 100%;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: border-color 0.3s;
+        }
+
+        .bracket-matchup.final-match {
+            border: 2px solid var(--gold);
+            position: relative;
+        }
+
+        .bracket-matchup.final-match::before {
+            content: "🏆 GRAND FINAL";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gold);
+            color: var(--bg-main);
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+
+        .bracket-matchup.third-place-match {
+            border: 2px solid var(--bronze);
+            position: relative;
+            margin-top: 40px;
+        }
+
+        .bracket-matchup.third-place-match::before {
+            content: "🥉 3RD PLACE MATCH";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bronze);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
         }
 
         .bracket-team-row {
@@ -319,32 +402,49 @@
             align-items: center;
         }
 
-        .wildcard-box {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
-            padding: 22px;
-            border-radius: 12px;
-            margin-bottom: 35px;
-            max-width: 650px;
-            margin-left: auto;
-            margin-right: auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        .bracket-team-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+        }
+
+        .bracket-team-row.winner {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .pk-wrap {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pk-badge {
+            font-size: 0.65rem;
+            color: var(--gold);
+            font-weight: bold;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
+<canvas id="celeb-canvas"></canvas>
+
 <header>
     <h1>🏆 FIFA WORLD CUP Yeasin 2026</h1>
-    <p>Simulate matches, auto-rank wildcards, map the tree, and manage match predictions </p>
+    <p>Simulate matches, auto-rank wildcards, map the tree, and manage live custom tournament awards</p>
 </header>
 
 <div class="stats-dashboard">
-    <h2>🏅 TOURNAMENT STATS</h2>
+    <h2>🏅 TOURNAMENT AWARDS & STATS</h2>
     <div class="stats-grid">
         <div class="stats-card">
             <label>⚽ Top Scorer (Golden Boot)</label>
-            <input type="text" class="stats-input" placeholder="e.g. Kylian Mbappé">
+            <input type="text" class="stats-input" id="award-boot" placeholder="e.g. Kylian Mbappé">
         </div>
         <div class="stats-card">
             <label>🎯 Most Assists</label>
@@ -356,7 +456,7 @@
         </div>
         <div class="stats-card">
             <label>🛡️ Best Team</label>
-            <input type="text" class="stats-input" placeholder="e.g. Spain 🇪🇸">
+            <input type="text" class="stats-input" id="award-team" placeholder="e.g. Spain 🇪🇸">
         </div>
     </div>
 </div>
@@ -397,16 +497,20 @@
     };
 
     let tournamentState = {};
+    let celebrationActive = false;
+    let particles = [];
 
     function initTournament() {
         tournamentState = {
             groups: {},
             knockouts: {
-                r32: Array(16).fill(null).map(() => [{name: "🏳️ TBD", score: null}, {name: "🏳️ TBD", score: null}]),
-                r16: Array(8).fill(null).map(() => [{name: "🏳️ TBD", score: null}, {name: "🏳️ TBD", score: null}]),
-                qf: Array(4).fill(null).map(() => [{name: "🏳️ TBD", score: null}, {name: "🏳️ TBD", score: null}]),
-                sf: Array(2).fill(null).map(() => [{name: "🏳️ TBD", score: null}, {name: "🏳️ TBD", score: null}]),
-                final: [[{name: "🏳️ TBD", score: null}, {name: "🏳️ TBD", score: null}]]
+                r32: Array(16).fill(null).map(() => [{name: "🏳️ TBD", score: "", pkScore: ""}, {name: "🏳️ TBD", score: "", pkScore: ""}]),
+                r16: Array(8).fill(null).map(() => [{name: "🏳️ TBD", score: "", pkScore: ""}, {name: "🏳️ TBD", score: "", pkScore: ""}]),
+                qf: Array(4).fill(null).map(() => [{name: "🏳️ TBD", score: "", pkScore: ""}, {name: "🏳️ TBD", score: "", pkScore: ""}]),
+                sf: Array(2).fill(null).map(() => [{name: "🏳️ TBD", score: "", pkScore: ""}, {name: "🏳️ TBD", score: "", pkScore: ""}]),
+                thirdPlace: [[{name: "🏳️ TBD", score: "", pkScore: ""}, {name: "🏳️ TBD", score: "", pkScore: ""}]],
+                final: [[{name: "🏳️ TBD", score: "", pkScore: ""}, {name: "🏳️ TBD", score: "", pkScore: ""}]],
+                champion: null
             }
         };
 
@@ -440,16 +544,84 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && e.target.classList.contains('score-input')) {
                 e.preventDefault();
-                
                 const inputs = Array.from(document.querySelectorAll('.score-input'));
                 const currentIndex = inputs.indexOf(e.target);
-                
                 if (currentIndex > -1 && currentIndex < inputs.length - 1) {
                     inputs[currentIndex + 1].focus();
                     inputs[currentIndex + 1].select();
                 }
             }
         });
+    }
+
+    function renderGroupStage() {
+        const container = document.getElementById('groups-container');
+        container.innerHTML = '';
+        
+        for (const [key, group] of Object.entries(tournamentState.groups)) {
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            card.setAttribute('data-group-id', key);
+            
+            let tableRows = group.teams.map(t => `
+                <tr>
+                    <td class="team-name">${t.name}</td>
+                    <td>${t.pld}</td>
+                    <td>${t.gd}</td>
+                    <td><strong>${t.pts}</strong></td>
+                </tr>
+            `).join('');
+
+            let fixtureRows = group.fixtures.map((f, idx) => `
+                <div class="match-row">
+                    <span class="match-team home">${f.home}</span>
+                    <div class="score-inputs">
+                        <input type="text" class="score-input" value="${f.homeScore}" oninput="updateManualScore('${key}', ${idx}, 'homeScore', this.value)">
+                        <span>-</span>
+                        <input type="text" class="score-input" value="${f.awayScore}" oninput="updateManualScore('${key}', ${idx}, 'awayScore', this.value)">
+                    </div>
+                    <span class="match-team away">${f.away}</span>
+                </div>
+            `).join('');
+
+            card.innerHTML = `
+                <h3>${group.name}</h3>
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">Team</th>
+                            <th>P</th>
+                            <th>GD</th>
+                            <th>Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+                <div class="fixtures-list">${fixtureRows}</div>
+            `;
+            container.appendChild(card);
+        }
+    }
+
+    function updateManualScore(groupKey, fixtureIdx, side, value) {
+        const fixture = tournamentState.groups[groupKey].fixtures[fixtureIdx];
+        fixture[side] = value === '' ? '' : parseInt(value);
+        calculateStandings(groupKey);
+        evaluateTournamentProgression();
+        
+        const groupCard = document.querySelector(`[data-group-id="${groupKey}"]`);
+        if(groupCard) {
+            const tableBody = groupCard.querySelector('.standings-table tbody');
+            tableBody.innerHTML = tournamentState.groups[groupKey].teams.map((t) => `
+                <tr>
+                    <td class="team-name">${t.name}</td>
+                    <td>${t.pld}</td>
+                    <td>${t.gd}</td>
+                    <td><strong>${t.pts}</strong></td>
+                </tr>
+            `).join('');
+        }
+        renderBracket();
     }
 
     function calculateStandings(groupId) {
@@ -502,28 +674,6 @@
         return k - 1;
     }
 
-    function updateManualScore(groupKey, fixtureIdx, side, value) {
-        const fixture = tournamentState.groups[groupKey].fixtures[fixtureIdx];
-        fixture[side] = value === '' ? '' : parseInt(value);
-        calculateStandings(groupKey);
-        evaluateTournamentProgression();
-        
-        const groupCard = document.querySelector(`[data-group-id="${groupKey}"]`);
-        if(groupCard) {
-            const tableBody = groupCard.querySelector('.standings-table tbody');
-            tableBody.innerHTML = tournamentState.groups[groupKey].teams.map((t) => `
-                <tr>
-                    <td class="team-name">${t.name}</td>
-                    <td>${t.pld}</td>
-                    <td>${t.gd}</td>
-                    <td><strong>${t.pts}</strong></td>
-                </tr>
-            `).join('');
-        }
-        
-        renderBracket();
-    }
-
     function evaluateTournamentProgression() {
         let qualifiers = []; 
         let thirdPlacePool = [];
@@ -535,14 +685,13 @@
         }
 
         thirdPlacePool.sort((a,b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
-        let activeWildcards = thirdPlacePool.slice(0, 8).map(t => t.name);
+        let activeWildcards = thirdPlacePool.slice(0, 8).map(t => t.pld > 0 ? t.name : "🏳️ TBD");
 
-        // FIXED ARRAY MAPPING: Replaced duplicate "2E" entry with proper "2I" track parameters
         const r32PairingTemplate = [
             { t1: "1A", t2: "3EFGH" }, { t1: "1B", t2: "3IJKL" }, { t1: "1C", t2: "2F" }, { t1: "2A", t2: "2B" },
             { t1: "1D", t2: "3BEFI" }, { t1: "1E", t2: "3ABCD" }, { t1: "1F", t2: "2C" }, { t1: "2D", t2: "2G" },
             { t1: "1G", t2: "3ABCJ" }, { t1: "1H", t2: "3EFGK" }, { t1: "1I", t2: "2E" }, { t1: "2I" , t2: "2H" },
-            { t1: "1J", t2: "3FGHI" }, { t1: "1K", t2: "3IJKL" }, { t1: "1L", t2: "2D" }, { t1: "2J", t2: "2K" }
+            { t1: "1J", t2: "3FGHI" }, { t1: "1K", t2: "3IJKL" }, { t1: "1L", t2: "2L" }, { t1: "2J", t2: "2K" }
         ];
 
         let wildcardIdx = 0;
@@ -552,160 +701,277 @@
 
             if (match.t2.startsWith("2")) {
                 awayTeam = qualifiers.find(q => q.seed === match.t2)?.name || "🏳️ TBD";
-            } else if (wildcardIdx < activeWildcards.length) {
+            } else {
                 awayTeam = activeWildcards[wildcardIdx] || "🏳️ TBD";
                 wildcardIdx++;
             }
 
-            if(tournamentState.knockouts.r32[idx][0].name !== homeTeam) {
-                tournamentState.knockouts.r32[idx][0] = { name: homeTeam, score: null };
-            }
-            if(tournamentState.knockouts.r32[idx][1].name !== awayTeam) {
-                tournamentState.knockouts.r32[idx][1] = { name: awayTeam, score: null };
-            }
+            if(tournamentState.knockouts.r32[idx][0].name !== homeTeam) tournamentState.knockouts.r32[idx][0].name = homeTeam;
+            if(tournamentState.knockouts.r32[idx][1].name !== awayTeam) tournamentState.knockouts.r32[idx][1].name = awayTeam;
         });
 
-        renderWildcards(thirdPlacePool);
+        propagateNextRound('r32', 'r16');
+        propagateNextRound('r16', 'qf');
+        propagateNextRound('qf', 'sf');
+        propagateFinalsAndThirdPlace();
     }
 
-    function advanceKnockoutStage(currentRoundKey, nextRoundKey, matchIdx, winnerName) {
-        const nextMatchIdx = Math.floor(matchIdx / 2);
-        const slotIdx = matchIdx % 2;
-        if(tournamentState.knockouts[nextRoundKey]) {
-            tournamentState.knockouts[nextRoundKey][nextMatchIdx][slotIdx].name = winnerName;
-            tournamentState.knockouts[nextRoundKey][nextMatchIdx][slotIdx].score = null;
+    function propagateNextRound(currentRoundKey, nextRoundKey) {
+        const matches = tournamentState.knockouts[currentRoundKey];
+        const nextMatches = tournamentState.knockouts[nextRoundKey];
+
+        for (let i = 0; i < matches.length; i += 2) {
+            const match1 = matches[i];
+            const match2 = matches[i+1];
+            const nextMatchIdx = i / 2;
+
+            const winner1 = getMatchWinner(match1);
+            const winner2 = getMatchWinner(match2);
+
+            if(nextMatches[nextMatchIdx][0].name !== winner1) {
+                nextMatches[nextMatchIdx][0].name = winner1;
+                nextMatches[nextMatchIdx][0].score = "";
+                nextMatches[nextMatchIdx][0].pkScore = "";
+            }
+            if(nextMatches[nextMatchIdx][1].name !== winner2) {
+                nextMatches[nextMatchIdx][1].name = winner2;
+                nextMatches[nextMatchIdx][1].score = "";
+                nextMatches[nextMatchIdx][1].pkScore = "";
+            }
         }
+    }
+
+    function propagateFinalsAndThirdPlace() {
+        const sfMatches = tournamentState.knockouts.sf;
+        const finalMatch = tournamentState.knockouts.final[0];
+        const thirdPlaceMatch = tournamentState.knockouts.thirdPlace[0];
+
+        const winner1 = getMatchWinner(sfMatches[0]);
+        const winner2 = getMatchWinner(sfMatches[1]);
+        const loser1 = getMatchLoser(sfMatches[0]);
+        const loser2 = getMatchLoser(sfMatches[1]);
+
+        if(finalMatch[0].name !== winner1) { finalMatch[0].name = winner1; finalMatch[0].score = ""; finalMatch[0].pkScore = ""; }
+        if(finalMatch[1].name !== winner2) { finalMatch[1].name = winner2; finalMatch[1].score = ""; finalMatch[1].pkScore = ""; }
+
+        if(thirdPlaceMatch[0].name !== loser1) { thirdPlaceMatch[0].name = loser1; thirdPlaceMatch[0].score = ""; thirdPlaceMatch[0].pkScore = ""; }
+        if(thirdPlaceMatch[1].name !== loser2) { thirdPlaceMatch[1].name = loser2; thirdPlaceMatch[1].score = ""; thirdPlaceMatch[1].pkScore = ""; }
+
+        const champion = getMatchWinner(finalMatch);
+        if (champion && champion !== "🏳️ TBD" && champion !== tournamentState.knockouts.champion) {
+            tournamentState.knockouts.champion = champion;
+            document.getElementById('award-team').value = champion;
+            triggerCelebration();
+        } else if (!champion || champion === "🏳️ TBD") {
+            tournamentState.knockouts.champion = null;
+        }
+    }
+
+    function getMatchWinner(match) {
+        if (match[0].score === "" || match[1].score === "" || match[0].score === null || match[1].score === null) return "🏳️ TBD";
+        const s1 = parseInt(match[0].score);
+        const s2 = parseInt(match[1].score);
+        
+        if (s1 === s2) {
+            const pk1 = parseInt(match[0].pkScore);
+            const pk2 = parseInt(match[1].pkScore);
+            if (isNaN(pk1) || isNaN(pk2)) return "🏳️ TBD";
+            return pk1 > pk2 ? match[0].name : match[1].name;
+        }
+        return s1 > s2 ? match[0].name : match[1].name;
+    }
+
+    function getMatchLoser(match) {
+        if (match[0].score === "" || match[1].score === "" || match[0].score === null || match[1].score === null) return "🏳️ TBD";
+        const s1 = parseInt(match[0].score);
+        const s2 = parseInt(match[1].score);
+        
+        if (s1 === s2) {
+            const winner = getMatchWinner(match);
+            if (winner === "🏳️ TBD") return "🏳️ TBD";
+            return winner === match[0].name ? match[1].name : match[0].name;
+        }
+        return s1 > s2 ? match[1].name : match[0].name;
+    }
+
+    function updateKnockoutScore(roundKey, matchIdx, teamIdx, val) {
+        let match = tournamentState.knockouts[roundKey] ? tournamentState.knockouts[roundKey][matchIdx] : tournamentState.knockouts.thirdPlace[matchIdx];
+        match[teamIdx].score = val === "" ? "" : parseInt(val);
+        
+        runPropagationChain(roundKey);
         renderBracket();
     }
 
-    function handleKnockoutScore(roundKey, nextRoundKey, matchIdx, teamIdx, value) {
-        const match = tournamentState.knockouts[roundKey][matchIdx];
-        match[teamIdx].score = value === '' ? null : parseInt(value);
-
-        if(match[0].score !== null && match[1].score !== null) {
-            let winner = match[0].score > match[1].score ? match[0].name : match[1].name;
-            if (match[0].score === match[1].score) {
-                winner = Math.random() > 0.5 ? match[0].name : match[1].name;
-            }
-            advanceKnockoutStage(roundKey, nextRoundKey, matchIdx, winner);
-        }
+    function updatePenaltyScore(roundKey, matchIdx, teamIdx, val) {
+        let match = tournamentState.knockouts[roundKey] ? tournamentState.knockouts[roundKey][matchIdx] : tournamentState.knockouts.thirdPlace[matchIdx];
+        match[teamIdx].pkScore = val === "" ? "" : parseInt(val);
+        
+        runPropagationChain(roundKey);
+        renderBracket();
     }
 
-    function renderGroupStage() {
-        const container = document.getElementById("groups-container");
-        container.innerHTML = "";
-
-        for (const [key, group] of Object.entries(tournamentState.groups)) {
-            const card = document.createElement("div");
-            card.className = "group-card";
-            card.setAttribute('data-group-id', key);
-            
-            let tableRows = group.teams.map((t) => `
-                <tr>
-                    <td class="team-name">${t.name}</td>
-                    <td>${t.pld}</td>
-                    <td>${t.gd}</td>
-                    <td><strong>${t.pts}</strong></td>
-                </tr>
-            `).join('');
-
-            let fixtureRows = group.fixtures.map((f, idx) => `
-                <div class="match-row">
-                    <span class="match-team home">${f.home}</span>
-                    <div class="score-inputs">
-                        <input type="number" class="score-input" value="${f.homeScore}" min="0" oninput="updateManualScore('${key}', ${idx}, 'homeScore', this.value)">
-                        <input type="number" class="score-input" value="${f.awayScore}" min="0" oninput="updateManualScore('${key}', ${idx}, 'awayScore', this.value)">
-                    </div>
-                    <span class="match-team away">${f.away}</span>
-                </div>
-            `).join('');
-
-            card.innerHTML = `
-                <h3>${group.name}</h3>
-                <table class="standings-table">
-                    <thead><tr><th style="text-align:left;">Team</th><th>P</th><th>GD</th><th>Pts</th></tr></thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-                <div class="fixtures-list">${fixtureRows}</div>
-            `;
-            container.appendChild(card);
-        }
-    }
-
-    function renderWildcards(pool) {
-        const wrapper = document.getElementById("wildcard-summary-zone");
-        if(pool.every(t => t.pld === 0)) { wrapper.innerHTML = ""; return; }
-
-        let rows = pool.map((t, i) => `
-            <tr style="background-color: ${i < 8 ? 'rgba(16, 185, 129, 0.15)' : 'transparent'}">
-                <td style="text-align:left; padding:8px;">${t.name} (${t.group})</td>
-                <td>${t.pts}</td>
-                <td>${t.gd}</td>
-                <td>${t.gf}</td>
-            </tr>
-        `).join('');
-
-        wrapper.innerHTML = `
-            <div class="wildcard-box">
-                <h3 style="margin-bottom:12px; color: var(--accent)">Wildcard Trackers (Top 8 Advance)</h3>
-                <table style="width:100%; border-collapse:collapse; text-align:center; font-size:0.85rem;">
-                    <thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;">Team</th><th>Pts</th><th>GD</th><th>GF</th></tr></thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            </div>
-        `;
+    function runPropagationChain(roundKey) {
+        if (roundKey === 'r32') { propagateNextRound('r32', 'r16'); propagateNextRound('r16', 'qf'); propagateNextRound('qf', 'sf'); propagateFinalsAndThirdPlace(); }
+        else if (roundKey === 'r16') { propagateNextRound('r16', 'qf'); propagateNextRound('qf', 'sf'); propagateFinalsAndThirdPlace(); }
+        else if (roundKey === 'qf') { propagateNextRound('qf', 'sf'); propagateFinalsAndThirdPlace(); }
+        else if (roundKey === 'sf' || roundKey === 'final' || roundKey === 'thirdPlace') { propagateFinalsAndThirdPlace(); }
     }
 
     function renderBracket() {
-        const container = document.getElementById("bracket-container");
-        container.innerHTML = "";
+        const container = document.getElementById('bracket-container');
+        container.innerHTML = '';
 
         const rounds = [
-            { key: "r32", nextKey: "r16", label: "Round of 32" },
-            { key: "r16", nextKey: "qf", label: "Round of 16" },
-            { key: "qf", nextKey: "sf", label: "Quarter-finals" },
-            { key: "sf", nextKey: "final", label: "Semi-finals" },
-            { key: "final", nextKey: null, label: "World Cup Final" }
+            { id: 'r32', name: 'Round of 32' },
+            { id: 'r16', name: 'Round of 16' },
+            { id: 'qf', name: 'Quarter Finals' },
+            { id: 'sf', name: 'Semi Finals & 3rd Pl.' },
+            { id: 'final', name: 'Grand Final' }
         ];
 
-        rounds.forEach(r => {
-            const col = document.createElement("div");
-            col.className = "bracket-round";
+        rounds.forEach(round => {
+            const roundDiv = document.createElement('div');
+            roundDiv.className = 'bracket-round';
             
-            const title = document.createElement("h4");
-            title.style.textAlign = "center";
-            title.style.color = "var(--text-muted)";
-            title.innerText = r.label;
-            col.appendChild(title);
+            const title = document.createElement('div');
+            title.className = 'bracket-round-title';
+            title.innerText = round.name;
+            roundDiv.appendChild(title);
 
-            tournamentState.knockouts[r.key].forEach((match, idx) => {
-                const box = document.createElement("div");
-                box.className = "bracket-matchup";
+            const wrapper = document.createElement('div');
+            wrapper.className = 'bracket-matchups-wrapper';
 
-                const val0 = match[0].score !== null ? match[0].score : '';
-                const val1 = match[1].score !== null ? match[1].score : '';
+            const matches = tournamentState.knockouts[round.id];
+            
+            if (matches) {
+                matches.forEach((match, idx) => {
+                    const winTeam = getMatchWinner(match);
+                    const isDraw = match[0].score !== "" && match[1].score !== "" && match[0].score !== null && match[0].score === match[1].score;
+                    const matchCard = document.createElement('div');
+                    matchCard.className = 'bracket-matchup';
+                    if (round.id === 'final') matchCard.className += ' final-match';
 
-                box.innerHTML = `
-                    <div class="bracket-team-row">
-                        <span>${match[0].name}</span>
-                        <input type="number" class="score-input" style="width:34px; height:26px;" value="${val0}" min="0" 
-                            oninput="handleKnockoutScore('${r.key}', '${r.nextKey}', ${idx}, 0, this.value)">
+                    matchCard.innerHTML = `
+                        <div class="bracket-team-row ${winTeam === match[0].name && winTeam !== '🏳️ TBD' ? 'winner' : ''}">
+                            <span class="bracket-team-name">${match[0].name}</span>
+                            <div class="pk-wrap">
+                                ${isDraw ? `<span class="pk-badge">PK:</span><input type="text" class="score-input pk-input" value="${match[0].pkScore !== null ? match[0].pkScore : ''}" oninput="updatePenaltyScore('${round.id}', ${idx}, 0, this.value)">` : ''}
+                                <input type="text" class="score-input" value="${match[0].score !== null ? match[0].score : ''}" oninput="updateKnockoutScore('${round.id}', ${idx}, 0, this.value)">
+                            </div>
+                        </div>
+                        <div class="bracket-team-row ${winTeam === match[1].name && winTeam !== '🏳️ TBD' ? 'winner' : ''}">
+                            <span class="bracket-team-name">${match[1].name}</span>
+                            <div class="pk-wrap">
+                                ${isDraw ? `<span class="pk-badge">PK:</span><input type="text" class="score-input pk-input" value="${match[1].pkScore !== null ? match[1].pkScore : ''}" oninput="updatePenaltyScore('${round.id}', ${idx}, 1, this.value)">` : ''}
+                                <input type="text" class="score-input" value="${match[1].score !== null ? match[1].score : ''}" oninput="updateKnockoutScore('${round.id}', ${idx}, 1, this.value)">
+                            </div>
+                        </div>
+                    `;
+                    wrapper.appendChild(matchCard);
+                });
+            }
+
+            if (round.id === 'sf') {
+                const thirdMatch = tournamentState.knockouts.thirdPlace[0];
+                const thirdWin = getMatchWinner(thirdMatch);
+                const thirdDraw = thirdMatch[0].score !== "" && thirdMatch[1].score !== "" && thirdMatch[0].score !== null && thirdMatch[0].score === thirdMatch[1].score;
+                const thirdCard = document.createElement('div');
+                thirdCard.className = 'bracket-matchup third-place-match';
+                thirdCard.innerHTML = `
+                    <div class="bracket-team-row ${thirdWin === thirdMatch[0].name && thirdWin !== '🏳️ TBD' ? 'winner' : ''}">
+                        <span class="bracket-team-name">${thirdMatch[0].name}</span>
+                        <div class="pk-wrap">
+                            ${thirdDraw ? `<span class="pk-badge">PK:</span><input type="text" class="score-input pk-input" value="${thirdMatch[0].pkScore !== null ? thirdMatch[0].pkScore : ''}" oninput="updatePenaltyScore('thirdPlace', 0, 0, this.value)">` : ''}
+                            <input type="text" class="score-input" value="${thirdMatch[0].score !== null ? thirdMatch[0].score : ''}" oninput="updateKnockoutScore('thirdPlace', 0, 0, this.value)">
+                        </div>
                     </div>
-                    <div class="bracket-team-row">
-                        <span>${match[1].name}</span>
-                        <input type="number" class="score-input" style="width:34px; height:26px;" value="${val1}" min="0" 
-                            oninput="handleKnockoutScore('${r.key}', '${r.nextKey}', ${idx}, 1, this.value)">
+                    <div class="bracket-team-row ${thirdWin === thirdMatch[1].name && thirdWin !== '🏳️ TBD' ? 'winner' : ''}">
+                        <span class="bracket-team-name">${thirdMatch[1].name}</span>
+                        <div class="pk-wrap">
+                            ${thirdDraw ? `<span class="pk-badge">PK:</span><input type="text" class="score-input pk-input" value="${thirdMatch[1].pkScore !== null ? thirdMatch[1].pkScore : ''}" oninput="updatePenaltyScore('thirdPlace', 0, 1, this.value)">` : ''}
+                            <input type="text" class="score-input" value="${thirdMatch[1].score !== null ? thirdMatch[1].score : ''}" oninput="updateKnockoutScore('thirdPlace', 0, 1, this.value)">
+                        </div>
                     </div>
                 `;
-                col.appendChild(box);
-            });
-            container.appendChild(col);
+                wrapper.appendChild(thirdCard);
+            }
+
+            roundDiv.appendChild(wrapper);
+            container.appendChild(roundDiv);
         });
+    }
+
+    function triggerCelebration() {
+        if (celebrationActive) return;
+        celebrationActive = true;
+        const canvas = document.getElementById('celeb-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        particles = [];
+        for (let i = 0; i < 150; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                r: Math.random() * 6 + 4,
+                d: Math.random() * canvas.height,
+                color: `hsl(${Math.random() * 360}, 90%, 60%)`,
+                tilt: Math.random() * 10 - 5,
+                tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                tiltAngle: 0
+            });
+        }
+
+        let animationFrameId;
+        let startTime = Date.now();
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let remaining = false;
+
+            particles.forEach((p) => {
+                p.tiltAngle += p.tiltAngleIncremental;
+                p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                p.x += Math.sin(p.tiltAngle);
+                p.tilt = Math.sin(p.tiltAngle - p.r / 2) * 5;
+
+                if (p.y < canvas.height) remaining = true;
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                ctx.stroke();
+            });
+
+            if (remaining && Date.now() - startTime < 6000) {
+                animationFrameId = requestAnimationFrame(draw);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                celebrationActive = false;
+            }
+        }
+        draw();
     }
 
     function resetTournament() {
         initTournament();
+        document.getElementById('award-boot').value = '';
+        document.getElementById('award-team').value = '';
+        const canvas = document.getElementById('celeb-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        celebrationActive = false;
     }
+
+    window.addEventListener('resize', () => {
+        const canvas = document.getElementById('celeb-canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
 
     initTournament();
 </script>
