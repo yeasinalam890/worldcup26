@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIFA World Cup 2026 Predictor</title>
+    <title>FIFA World Cup 2026 Predictor & Dream XI</title>
     <style>
         :root {
             --primary: #3b82f6;
@@ -17,6 +17,8 @@
             --accent: #10b981;
             --gold: #f59e0b;
             --bronze: #cd7f32;
+            --pitch-green: #115e59;
+            --pitch-lines: rgba(255, 255, 255, 0.2);
         }
 
         * {
@@ -132,6 +134,7 @@
             justify-content: center;
             gap: 15px;
             margin-bottom: 35px;
+            flex-wrap: wrap;
         }
 
         button {
@@ -161,6 +164,14 @@
 
         button.secondary:hover {
             background-color: var(--bg-input);
+        }
+
+        button.dream-btn {
+            background: linear-gradient(135deg, #f59e0b, #ea580c);
+            box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2);
+        }
+        button.dream-btn:hover {
+            background: linear-gradient(135deg, #d97706, #c2410c);
         }
 
         .tabs {
@@ -428,6 +439,229 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+
+        /* DREAM XI STYLING */
+        .dream-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-main);
+            z-index: 10000;
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .dream-modal.active {
+            display: block;
+        }
+
+        .dream-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .dream-layout {
+            display: grid;
+            grid-template-columns: 1fr 430px;
+            gap: 30px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        @media(max-width: 950px) {
+            .dream-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pitch-container {
+            background-color: var(--pitch-green);
+            border: 4px solid white;
+            border-radius: 12px;
+            height: 660px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30px 0;
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.6);
+        }
+
+        .pitch-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 140px;
+            height: 140px;
+            border: 2px solid var(--pitch-lines);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .pitch-container::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--pitch-lines);
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .pitch-line-row {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            z-index: 2;
+        }
+
+        .pitch-player-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            width: 100px;
+        }
+
+        .avatar-circle-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: white;
+            border: 2px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+            background-color: var(--primary);
+        }
+
+        .pitch-player-card:hover .avatar-circle-icon {
+            transform: scale(1.1);
+            border-color: var(--gold);
+        }
+
+        .player-name-label {
+            background-color: rgba(11, 15, 25, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 0.72rem;
+            text-align: center;
+            margin-top: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 105px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .selection-sidebar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 660px;
+        }
+
+        .selection-sidebar h3 {
+            color: var(--gold);
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .team-selector-dropdown {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .player-pool-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 5px;
+        }
+
+        .pool-player-item {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .pool-player-item:hover {
+            background-color: var(--bg-input);
+            border-color: var(--primary);
+        }
+
+        .pool-player-avatar-view {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+            border: 1px solid var(--border);
+        }
+
+        .pool-player-details {
+            flex-grow: 1;
+        }
+
+        .pool-info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .pool-player-name {
+            font-weight: bold;
+            color: white;
+            font-size: 0.92rem;
+        }
+
+        .club-tag {
+            font-size: 0.75rem;
+            color: var(--gold);
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -463,6 +697,7 @@
 
 <div class="controls">
     <button onclick="simulateGroupStage()">Simulate Group Stage</button>
+    <button class="dream-btn" onclick="openDreamXI()">✨ Build Dream XI</button>
     <button class="secondary" onclick="resetTournament()">Reset Tournament</button>
 </div>
 
@@ -478,6 +713,37 @@
 
 <div id="panel-bracket" class="view-panel">
     <div class="bracket-container" id="bracket-container"></div>
+</div>
+
+<div id="dream-xi-modal" class="dream-modal">
+    <div class="dream-header">
+        <h2>⚽ Dream XI Tournament Manager</h2>
+        <div style="display:flex; gap: 12px; align-items:center;">
+            <label style="font-weight:bold; font-size:0.9rem;">Formation:</label>
+            <select class="team-selector-dropdown" style="width:100px; padding:6px;" id="formation-select" onchange="changeFormation()">
+                <option value="433">4-3-3</option>
+                <option value="442">4-4-2</option>
+                <option value="352">3-5-2</option>
+            </select>
+            <button class="secondary" style="padding: 8px 16px;" onclick="closeDreamXI()">Back to Tournament</button>
+        </div>
+    </div>
+    
+    <div class="dream-layout">
+        <div class="pitch-container" id="pitch-field">
+            </div>
+        
+        <div class="selection-sidebar">
+            <h3 id="sidebar-instruction">Select a position on the pitch</h3>
+            <label style="font-size:0.8rem; color:var(--text-muted); font-weight:bold;">Filter By National Team:</label>
+            <select class="team-selector-dropdown" id="sidebar-team-filter" onchange="loadPlayerPool()">
+                <option value="ALL">Show All Players</option>
+            </select>
+            
+            <div class="player-pool-list" id="player-pool-container">
+                </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -496,9 +762,165 @@
         L: { name: "Group L", teams: ["England 🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croatia 🇭🇷", "Ghana 🇬🇭", "Panama 🇵🇦"], ratings: [93, 86, 76, 72] }
     };
 
+    // 100% HARDCODED AUTHENTIC NATIONAL TOURNAMENT ROSTERS
+    const MASTER_REAL_SQUADS = {
+        "Germany 🇩🇪": [
+            { name: "Marc-André ter Stegen", pos: "GK", height: "187 cm", weight: "85 kg", pref: "GK", club: "FC Barcelona", bg: "#1e3a8a", init: "TS" },
+            { name: "Oliver Baumann", pos: "GK", height: "187 cm", weight: "82 kg", pref: "GK", club: "TSG Hoffenheim", bg: "#1e3a8a", init: "OB" },
+            { name: "Alexander Nübel", pos: "GK", height: "193 cm", weight: "86 kg", pref: "GK", club: "VfB Stuttgart", bg: "#1e3a8a", init: "AN" },
+            { name: "Antonio Rüdiger", pos: "DF", height: "190 cm", weight: "85 kg", pref: "CB", club: "Real Madrid", bg: "#065f46", init: "AR" },
+            { name: "Jonathan Tah", pos: "DF", height: "195 cm", weight: "94 kg", pref: "CB", club: "Bayer Leverkusen", bg: "#065f46", init: "JT" },
+            { name: "Nico Schlotterbeck", pos: "DF", height: "191 cm", weight: "86 kg", pref: "CB", club: "Borussia Dortmund", bg: "#065f46", init: "NS" },
+            { name: "David Raum", pos: "DF", height: "180 cm", weight: "75 kg", pref: "LB", club: "RB Leipzig", bg: "#065f46", init: "DR" },
+            { name: "Joshua Kimmich", pos: "MF", height: "177 cm", weight: "75 kg", pref: "RB/CDM", club: "Bayern Munich", bg: "#b45309", init: "JK" },
+            { name: "Aleksandar Pavlović", pos: "MF", height: "188 cm", weight: "78 kg", pref: "CDM", club: "Bayern Munich", bg: "#b45309", init: "AP" },
+            { name: "Robert Andrich", pos: "MF", height: "187 cm", weight: "83 kg", pref: "CM", club: "Bayer Leverkusen", bg: "#b45309", init: "RA" },
+            { name: "Jamal Musiala", pos: "MF", height: "184 cm", weight: "72 kg", pref: "CAM", club: "Bayern Munich", bg: "#b45309", init: "JM" },
+            { name: "Florian Wirtz", pos: "MF", height: "176 cm", weight: "71 kg", pref: "CAM/LW", club: "Bayer Leverkusen", bg: "#b45309", init: "FW" },
+            { name: "Kai Havertz", pos: "FW", height: "193 cm", weight: "83 kg", pref: "ST/CF", club: "Arsenal FC", bg: "#991b1b", init: "KH" },
+            { name: "Niclas Füllkrug", pos: "FW", height: "189 cm", weight: "83 kg", pref: "ST", club: "West Ham United", bg: "#991b1b", init: "NF" },
+            { name: "Leroy Sané", pos: "FW", height: "183 cm", weight: "80 kg", pref: "RW/LW", club: "Bayern Munich", bg: "#991b1b", init: "LS" }
+        ],
+        "Qatar 🇶🇦": [
+            { name: "Meshaal Barsham", pos: "GK", height: "180 cm", weight: "74 kg", pref: "GK", club: "Al Sadd SC", bg: "#1e3a8a", init: "MB" },
+            { name: "Salah Zakaria", pos: "GK", height: "185 cm", weight: "78 kg", pref: "GK", club: "Al Duhail SC", bg: "#1e3a8a", init: "SZ" },
+            { name: "Boualem Khoukhi", pos: "DF", height: "182 cm", weight: "79 kg", pref: "CB", club: "Al Sadd SC", bg: "#065f46", init: "BK" },
+            { name: "Lucas Mendes", pos: "DF", height: "184 cm", weight: "80 kg", pref: "CB", club: "Al Wakrah SC", bg: "#065f46", init: "LM" },
+            { name: "Homam Ahmed", pos: "DF", height: "186 cm", weight: "78 kg", pref: "LB", club: "Al Gharafa SC", bg: "#065f46", init: "HA" },
+            { name: "Ahmed Fatehi", pos: "MF", height: "176 cm", weight: "72 kg", pref: "CDM", club: "Al Arabi SC", bg: "#b45309", init: "AF" },
+            { name: "Jassem Gaber", pos: "MF", height: "179 cm", weight: "74 kg", pref: "CM", club: "Al Rayyan SC", bg: "#b45309", init: "JG" },
+            { name: "Akram Afif", pos: "FW", height: "177 cm", weight: "70 kg", pref: "LW/CAM", club: "Al Sadd SC", bg: "#991b1b", init: "AA" },
+            { name: "Almoez Ali", pos: "FW", height: "180 cm", weight: "72 kg", pref: "ST", club: "Al Duhail SC", bg: "#991b1b", init: "AL" }
+        ],
+        "Argentina 🇦🇷": [
+            { name: "Emiliano Martínez", pos: "GK", height: "195 cm", weight: "88 kg", pref: "GK", club: "Aston Villa", bg: "#1e3a8a", init: "EM" },
+            { name: "Geronimo Rulli", pos: "GK", height: "189 cm", weight: "84 kg", pref: "GK", club: "Olympique Marseille", bg: "#1e3a8a", init: "GR" },
+            { name: "Cristian Romero", pos: "DF", height: "185 cm", weight: "79 kg", pref: "CB", club: "Tottenham Hotspur", bg: "#065f46", init: "CR" },
+            { name: "Lisandro Martínez", pos: "DF", height: "175 cm", weight: "77 kg", pref: "CB", club: "Manchester United", bg: "#065f46", init: "LM" },
+            { name: "Nahuel Molina", pos: "DF", height: "175 cm", weight: "70 kg", pref: "RB", club: "Atlético Madrid", bg: "#065f46", init: "NM" },
+            { name: "Nicolás Tagliafico", pos: "DF", height: "172 cm", weight: "65 kg", pref: "LB", club: "Olympique Lyon", bg: "#065f46", init: "NT" },
+            { name: "Rodrigo De Paul", pos: "MF", height: "180 cm", weight: "70 kg", pref: "CM", club: "Atlético Madrid", bg: "#b45309", init: "RD" },
+            { name: "Alexis Mac Allister", pos: "MF", height: "176 cm", weight: "72 kg", pref: "CM", club: "Liverpool FC", bg: "#b45309", init: "AM" },
+            { name: "Enzo Fernández", pos: "MF", height: "178 cm", weight: "76 kg", pref: "CM", club: "Chelsea FC", bg: "#b45309", init: "EF" },
+            { name: "Lionel Messi", pos: "FW", height: "170 cm", weight: "72 kg", pref: "RW/CF", club: "Inter Miami CF", bg: "#991b1b", init: "LM" },
+            { name: "Lautaro Martínez", pos: "FW", height: "174 cm", weight: "72 kg", pref: "ST", club: "Inter Milan", bg: "#991b1b", init: "LM" },
+            { name: "Julián Álvarez", pos: "FW", height: "170 cm", weight: "71 kg", pref: "ST/LW", club: "Atlético Madrid", bg: "#991b1b", init: "JA" }
+        ],
+        "France 🇫🇷": [
+            { name: "Mike Maignan", pos: "GK", height: "191 cm", weight: "89 kg", pref: "GK", club: "AC Milan", bg: "#1e3a8a", init: "MM" },
+            { name: "William Saliba", pos: "DF", height: "192 cm", weight: "92 kg", pref: "CB", club: "Arsenal FC", bg: "#065f46", init: "WS" },
+            { name: "Dayot Upamecano", pos: "DF", height: "186 cm", weight: "83 kg", pref: "CB", club: "Bayern Munich", bg: "#065f46", init: "DU" },
+            { name: "Theo Hernández", pos: "DF", height: "184 cm", weight: "81 kg", pref: "LB", club: "AC Milan", bg: "#065f46", init: "TH" },
+            { name: "Jules Koundé", pos: "DF", height: "181 cm", weight: "75 kg", pref: "RB/CB", club: "FC Barcelona", bg: "#065f46", init: "JK" },
+            { name: "Aurélien Tchouaméni", pos: "MF", height: "188 cm", weight: "81 kg", pref: "CDM", club: "Real Madrid", bg: "#b45309", init: "AT" },
+            { name: "Eduardo Camavinga", pos: "MF", height: "182 cm", weight: "77 kg", pref: "CM/CDM", club: "Real Madrid", bg: "#b45309", init: "EC" },
+            { name: "N'Golo Kanté", pos: "MF", height: "168 cm", weight: "68 kg", pref: "CDM/CM", club: "Al-Ittihad", bg: "#b45309", init: "NK" },
+            { name: "Kylian Mbappé", pos: "FW", height: "178 cm", weight: "75 kg", pref: "ST/LW", club: "Real Madrid", bg: "#991b1b", init: "KM" },
+            { name: "Ousmane Dembélé", pos: "FW", height: "178 cm", weight: "67 kg", pref: "RW", club: "Paris Saint-Germain", bg: "#991b1b", init: "OD" },
+            { name: "Bradley Barcola", pos: "FW", height: "182 cm", weight: "76 kg", pref: "LW", club: "Paris Saint-Germain", bg: "#991b1b", init: "BB" }
+        ],
+        "Portugal 🇵🇹": [
+            { name: "Diogo Costa", pos: "GK", height: "186 cm", weight: "81 kg", pref: "GK", club: "FC Porto", bg: "#1e3a8a", init: "DC" },
+            { name: "Rúben Dias", pos: "DF", height: "187 cm", weight: "82 kg", pref: "CB", club: "Manchester City", bg: "#065f46", init: "RD" },
+            { name: "Nuno Mendes", pos: "DF", height: "176 cm", weight: "70 kg", pref: "LB", club: "Paris Saint-Germain", bg: "#065f46", init: "NM" },
+            { name: "João Palhinha", pos: "MF", height: "190 cm", weight: "84 kg", pref: "CDM", club: "Bayern Munich", bg: "#b45309", init: "JP" },
+            { name: "Vitinha", pos: "MF", height: "172 cm", weight: "64 kg", pref: "CM", club: "Paris Saint-Germain", bg: "#b45309", init: "VI" },
+            { name: "Bruno Fernandes", pos: "MF", height: "179 cm", weight: "69 kg", pref: "CAM", club: "Manchester United", bg: "#b45309", init: "BF" },
+            { name: "Bernardo Silva", pos: "MF", height: "173 cm", weight: "64 kg", pref: "RW/CM", club: "Manchester City", bg: "#b45309", init: "BS" },
+            { name: "Cristiano Ronaldo", pos: "FW", height: "187 cm", weight: "83 kg", pref: "ST", club: "Al-Nassr FC", bg: "#991b1b", init: "CR" },
+            { name: "Rafael Leão", pos: "FW", height: "188 cm", weight: "81 kg", pref: "LW", club: "AC Milan", bg: "#991b1b", init: "RL" }
+        ],
+        "England 🏴󠁧󠁢󠁥󠁮󠁧󠁿": [
+            { name: "Jordan Pickford", pos: "GK", height: "185 cm", weight: "77 kg", pref: "GK", club: "Everton FC", bg: "#1e3a8a", init: "JP" },
+            { name: "John Stones", pos: "DF", height: "188 cm", weight: "76 kg", pref: "CB", club: "Manchester City", bg: "#065f46", init: "JS" },
+            { name: "Marc Guéhi", pos: "DF", height: "182 cm", weight: "78 kg", pref: "CB", club: "Crystal Palace", bg: "#065f46", init: "MG" },
+            { name: "Trent Alexander-Arnold", pos: "DF", height: "180 cm", weight: "69 kg", pref: "RB/CM", club: "Liverpool FC", bg: "#065f46", init: "TA" },
+            { name: "Declan Rice", pos: "MF", height: "185 cm", weight: "80 kg", pref: "CDM/CM", club: "Arsenal FC", bg: "#b45309", init: "DR" },
+            { name: "Declan Rice", pos: "MF", height: "185 cm", weight: "80 kg", pref: "CDM/CM", club: "Arsenal FC", bg: "#b45309", init: "DR" },
+            { name: "Kobbie Mainoo", pos: "MF", height: "175 cm", weight: "73 kg", pref: "CM", club: "Manchester United", bg: "#b45309", init: "KM" },
+            { name: "Phil Foden", pos: "FW", height: "171 cm", weight: "70 kg", pref: "CAM/LW", club: "Manchester City", bg: "#991b1b", init: "PF" },
+            { name: "Bukayo Saka", pos: "FW", height: "178 cm", weight: "72 kg", pref: "RW", club: "Arsenal FC", bg: "#991b1b", init: "BS" },
+            { name: "Cole Palmer", pos: "FW", height: "189 cm", weight: "74 kg", pref: "CAM/RW", club: "Chelsea FC", bg: "#991b1b", init: "CP" },
+            { name: "Harry Kane", pos: "FW", height: "188 cm", weight: "86 kg", pref: "ST", club: "Bayern Munich", bg: "#991b1b", init: "HK" }
+        ],
+        "Mexico 🇲🇽": [
+            { name: "Guillermo Ochoa", pos: "GK", height: "185 cm", weight: "78 kg", pref: "GK", club: "AVS Futebol SAD", bg: "#1e3a8a", init: "GO" },
+            { name: "César Montes", pos: "DF", height: "191 cm", weight: "80 kg", pref: "CB", club: "Lokomotiv Moscow", bg: "#065f46", init: "CM" },
+            { name: "Johan Vásquez", pos: "DF", height: "185 cm", weight: "78 kg", pref: "CB", club: "Genoa CFC", bg: "#065f46", init: "JV" },
+            { name: "Edson Álvarez", pos: "MF", height: "187 cm", weight: "73 kg", pref: "CDM", club: "West Ham United", bg: "#b45309", init: "EA" },
+            { name: "Luis Chávez", pos: "MF", height: "178 cm", weight: "70 kg", pref: "CM", club: "Dynamo Moscow", bg: "#b45309", init: "LC" },
+            { name: "Santiago Giménez", pos: "FW", height: "182 cm", weight: "79 kg", pref: "ST", club: "Feyenoord", bg: "#991b1b", init: "SG" },
+            { name: "Hirving Lozano", pos: "FW", height: "175 cm", weight: "70 kg", pref: "LW/RW", club: "San Diego FC", bg: "#991b1b", init: "HL" }
+        ],
+        "Brazil 🇧🇷": [
+            { name: "Alisson Becker", pos: "GK", height: "193 cm", weight: "91 kg", pref: "GK", club: "Liverpool FC", bg: "#1e3a8a", init: "AB" },
+            { name: "Ederson Moraes", pos: "GK", height: "188 cm", weight: "86 kg", pref: "GK", club: "Manchester City", bg: "#1e3a8a", init: "EM" },
+            { name: "Gabriel Magalhães", pos: "DF", height: "190 cm", weight: "78 kg", pref: "CB", club: "Arsenal FC", bg: "#065f46", init: "GM" },
+            { name: "Bruno Guimarães", pos: "MF", height: "182 cm", weight: "74 kg", pref: "CM/CDM", club: "Newcastle United", bg: "#b45309", init: "BG" },
+            { name: "Lucas Paquetá", pos: "MF", height: "180 cm", weight: "72 kg", pref: "CAM", club: "West Ham United", bg: "#b45309", init: "LP" },
+            { name: "Vinícius Júnior", pos: "FW", height: "176 cm", weight: "73 kg", pref: "LW", club: "Real Madrid", bg: "#991b1b", init: "VJ" },
+            { name: "Rodrygo Goes", pos: "FW", height: "174 cm", weight: "64 kg", pref: "RW/ST", club: "Real Madrid", bg: "#991b1b", init: "RG" },
+            { name: "Raphinha Dias", pos: "FW", height: "176 cm", weight: "68 kg", pref: "RW/CAM", club: "FC Barcelona", bg: "#991b1b", init: "RD" }
+        ]
+    };
+
+    // SECURE FALLBACK DATA POOL FOR NON-EXPLICIT NATIONS
+    const GENERIC_FIRST = ["David", "Luca", "Thomas", "Paul", "Marc", "Stefan", "Alex", "Eric"];
+    const GENERIC_LAST = ["Miller", "Martin", "Clark", "Sato", "Rossi", "Bakker", "Larsen", "Sosa"];
+    const GENERIC_CLUBS = ["Real Madrid", "FC Barcelona", "Arsenal FC", "N/A", "N/A"];
+
     let tournamentState = {};
     let celebrationActive = false;
     let particles = [];
+    let activeSlotIndex = null;
+    let activePositionType = "FW";
+    let selectedDreamXI = {};
+
+    function getProceduralSquadForNation(nationName) {
+        if (MASTER_REAL_SQUADS[nationName]) {
+            return MASTER_REAL_SQUADS[nationName];
+        }
+
+        let players = [];
+        const baseName = nationName.split(' ')[0];
+        const countPos = (p) => players.filter(pl => pl.pos === p).length;
+
+        // GK
+        while (countPos("GK") < 2) {
+            let i = countPos("GK") + 1;
+            let f = GENERIC_FIRST[(baseName.length + i) % GENERIC_FIRST.length];
+            let l = GENERIC_LAST[(baseName.length * i) % GENERIC_LAST.length];
+            let c = GENERIC_CLUBS[(baseName.length + i) % GENERIC_CLUBS.length];
+            players.push({ name: `${f} ${l}`, pos: "GK", height: "188 cm", weight: "83 kg", pref: "GK", club: c, bg: "#1e3a8a", init: f[0]+l[0] });
+        }
+        // DF
+        while (countPos("DF") < 4) {
+            let i = countPos("DF") + 1;
+            let f = GENERIC_FIRST[(baseName.charCodeAt(0) + i) % GENERIC_FIRST.length];
+            let l = GENERIC_LAST[(baseName.length + i) % GENERIC_LAST.length];
+            let c = GENERIC_CLUBS[(baseName.charCodeAt(0) * i) % GENERIC_CLUBS.length];
+            players.push({ name: `${f} ${l}`, pos: "DF", height: "184 cm", weight: "77 kg", pref: "CB", club: c, bg: "#065f46", init: f[0]+l[0] });
+        }
+        // MF
+        while (countPos("MF") < 4) {
+            let i = countPos("MF") + 1;
+            let f = GENERIC_FIRST[(baseName.length + i * 2) % GENERIC_FIRST.length];
+            let l = GENERIC_LAST[(baseName.charCodeAt(0) + i) % GENERIC_LAST.length];
+            let c = GENERIC_CLUBS[(baseName.length + i * 3) % GENERIC_CLUBS.length];
+            players.push({ name: `${f} ${l}`, pos: "MF", height: "178 cm", weight: "72 kg", pref: "CM", club: c, bg: "#b45309", init: f[0]+l[0] });
+        }
+        // FW
+        while (countPos("FW") < 3) {
+            let i = countPos("FW") + 1;
+            let f = GENERIC_FIRST[(baseName.charCodeAt(0) + i * 3) % GENERIC_FIRST.length];
+            let l = GENERIC_LAST[(baseName.length + i * 2) % GENERIC_LAST.length];
+            let c = GENERIC_CLUBS[(baseName.charCodeAt(0) + i) % GENERIC_CLUBS.length];
+            players.push({ name: `${f} ${l}`, pos: "FW", height: "182 cm", weight: "76 kg", pref: "ST", club: c, bg: "#991b1b", init: f[0]+l[0] });
+        }
+
+        players.forEach(p => p.team = nationName);
+        return players;
+    }
 
     function initTournament() {
         tournamentState = {
@@ -528,9 +950,128 @@
                 tournamentState.groups[key].fixtures.push({ home: t[p[0]].name, away: t[p[1]].name, homeScore: '', awayScore: '' });
             });
         }
+        
+        const drop = document.getElementById('sidebar-team-filter');
+        if (drop) {
+            drop.innerHTML = '<option value="ALL">Show All Players</option>';
+            Object.values(INITIAL_GROUPS).forEach(g => {
+                g.teams.forEach(t => {
+                    drop.innerHTML += `<option value="${t}">${t}</option>`;
+                });
+            });
+        }
+
         renderGroupStage();
         renderBracket();
         setupInputNavigation();
+        changeFormation();
+    }
+
+    function openDreamXI() {
+        document.getElementById('dream-xi-modal').classList.add('active');
+    }
+
+    function closeDreamXI() {
+        document.getElementById('dream-xi-modal').classList.remove('active');
+    }
+
+    function changeFormation() {
+        const formation = document.getElementById('formation-select').value;
+        const pitch = document.getElementById('pitch-field');
+        pitch.innerHTML = '';
+
+        let structure = {
+            "433": [ {pos: "FW", count: 3}, {pos: "MF", count: 3}, {pos: "DF", count: 4}, {pos: "GK", count: 1} ],
+            "442": [ {pos: "FW", count: 2}, {pos: "MF", count: 4}, {pos: "DF", count: 4}, {pos: "GK", count: 1} ],
+            "352": [ {pos: "FW", count: 2}, {pos: "MF", count: 5}, {pos: "DF", count: 3}, {pos: "GK", count: 1} ]
+        }[formation];
+
+        let absoluteSlotId = 0;
+        structure.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'pitch-line-row';
+            
+            for(let i=0; i < row.count; i++) {
+                const currentId = absoluteSlotId;
+                const playerVal = selectedDreamXI[currentId];
+                
+                let backgroundStyle = "var(--primary)";
+                let initialText = row.pos;
+                if (playerVal) {
+                    backgroundStyle = playerVal.bg || "var(--primary)";
+                    initialText = playerVal.init || "XI";
+                }
+
+                rowDiv.innerHTML += `
+                    <div class="pitch-player-card" onclick="selectPitchSlot(${currentId}, '${row.pos}')">
+                        <div class="avatar-circle-icon" style="background-color: ${backgroundStyle};">${initialText}</div>
+                        <div class="player-name-label" id="slot-name-${currentId}">${playerVal ? playerVal.name : `Empty ${row.pos}`}</div>
+                    </div>
+                `;
+                absoluteSlotId++;
+            }
+            pitch.appendChild(rowDiv);
+        });
+    }
+
+    function selectPitchSlot(slotId, positionType) {
+        activeSlotIndex = slotId;
+        activePositionType = positionType;
+        document.getElementById('sidebar-instruction').innerText = `Pick a ${positionType}`;
+        loadPlayerPool();
+    }
+
+    function loadPlayerPool() {
+        if(activeSlotIndex === null) return;
+        const filterNation = document.getElementById('sidebar-team-filter').value;
+        const container = document.getElementById('player-pool-container');
+        container.innerHTML = '';
+
+        let completeRosterList = [];
+
+        if (filterNation === "ALL") {
+            Object.values(INITIAL_GROUPS).forEach(g => {
+                g.teams.forEach(t => {
+                    completeRosterList = completeRosterList.concat(getProceduralSquadForNation(t));
+                });
+            });
+        } else {
+            completeRosterList = getProceduralSquadForNation(filterNation);
+        }
+
+        let pool = completeRosterList.filter(p => p.pos === activePositionType);
+
+        if(pool.length === 0) {
+            container.innerHTML = `<div style="font-size:0.85rem; color:var(--text-muted); padding:10px;">No matching roster options discovered.</div>`;
+            return;
+        }
+
+        pool.forEach(player => {
+            const div = document.createElement('div');
+            div.className = 'pool-player-item';
+            div.innerHTML = `
+                <div class="pool-player-avatar-view" style="background-color: ${player.bg || 'var(--primary)'};">
+                    ${player.init || 'P'}
+                </div>
+                <div class="pool-player-details">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="pool-player-name">${player.name}</span>
+                        <span class="club-tag">${player.club}</span>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--primary); font-weight:600; margin-top:2px;">${player.team}</div>
+                    <div class="pool-info-row">
+                        <span>Role: <strong>${player.pref}</strong></span>
+                        <span>H: ${player.height}</span>
+                        <span>W: ${player.weight}</span>
+                    </div>
+                </div>
+            `;
+            div.onclick = () => {
+                selectedDreamXI[activeSlotIndex] = player;
+                changeFormation();
+            };
+            container.appendChild(div);
+        });
     }
 
     function switchTab(tab) {
@@ -959,21 +1500,7 @@
 
     function resetTournament() {
         initTournament();
+        selectedDreamXI = {};
+        changeFormation();
         document.getElementById('award-boot').value = '';
-        document.getElementById('award-team').value = '';
-        const canvas = document.getElementById('celeb-canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        celebrationActive = false;
-    }
-
-    window.addEventListener('resize', () => {
-        const canvas = document.getElementById('celeb-canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    });
-
-    initTournament();
-</script>
-</body>
-</html>
+        document.getElementById('award-tea
